@@ -2,8 +2,8 @@ import asyncio
 import imaplib
 import email
 import os
-from telegram import Bot, InlineKeyboardButton, InlineKeyboardMarkup, Update
-from telegram.ext import CallbackContext, Updater
+from telegram import Bot, InlineKeyboardButton, InlineKeyboardMarkup
+from telegram.ext import Updater, CallbackQueryHandler
 from bs4 import BeautifulSoup
 from email.header import decode_header
 
@@ -18,7 +18,7 @@ mail = imaplib.IMAP4_SSL('imap.gmail.com')
 mail.login(username, password)
 
 # Callback function to handle the delete action
-def handle_delete_action(update: Update, context: CallbackContext):
+def handle_delete_action(update, context):
     query = update.callback_query
     email_id = query.data
 
@@ -100,7 +100,7 @@ async def fetch_emails_and_send_telegram():
 asyncio.run(fetch_emails_and_send_telegram())
 
 # Set up the Telegram bot and add the delete action handler
-updater = Updater(token=os.environ['TELEGRAM_BOT_TOKEN'])
+updater = Updater(token=os.environ['TELEGRAM_BOT_TOKEN'], use_context=True)
 dispatcher = updater.dispatcher
 dispatcher.add_handler(CallbackQueryHandler(handle_delete_action))
 
