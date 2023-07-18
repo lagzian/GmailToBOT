@@ -59,24 +59,17 @@ async def fetch_emails_and_send_telegram():
         if email_message.is_multipart():
             for part in email_message.get_payload():
                 if part.get_content_type() == 'text/plain':
-                    body = part.get_payload(decode=True)
+                    body = part.get_payload()
                     break
         else:
-            body = email_message.get_payload(decode=True)
-
-        # Decode the content of the email body
-        charset = email_message.get_content_charset()
-        if charset:
-            body = body.decode(charset)
-        else:
-            body = body.decode('utf-8', 'ignore')
+            body = email_message.get_payload()
 
         # Remove HTML tags from the body if it contains HTML
         soup = BeautifulSoup(body, 'lxml')
         plain_text_body = soup.get_text()
 
-        # Add "📩NEW EMAIL📩" header to the message
-        header = "📩NEW EMAIL📩"
+        # Add "📧NEW EMAIL📧" header to the message
+        header = "📧NEW EMAIL📧"
         message = f"{header}\nSubject: {subject}\nFrom: {sender}\n\n{plain_text_body}"
 
         # Truncate the message if it exceeds the limit
