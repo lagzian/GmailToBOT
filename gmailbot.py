@@ -2,7 +2,7 @@ import asyncio
 import imaplib
 import email
 import os
-from telegram import Bot
+from telegram import Bot, InlineKeyboardButton, InlineKeyboardMarkup
 from bs4 import BeautifulSoup
 from email.header import decode_header
 
@@ -73,8 +73,11 @@ async def fetch_emails_and_send_telegram():
         if len(message) > 4096:
             message = message[:4093] + "..."
 
-        # Send the message to Telegram
-        await bot.send_message(chat_id=chat_id, text=message)
+        # Create inline keyboard with delete button
+        keyboard = InlineKeyboardMarkup([[InlineKeyboardButton('Delete', callback_data=email_id.decode())]])
+
+        # Send the message with inline keyboard to Telegram
+        await bot.send_message(chat_id=chat_id, text=message, reply_markup=keyboard)
 
     # Logout and close the connection
     mail.logout()
