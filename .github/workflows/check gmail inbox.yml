@@ -3,8 +3,6 @@ name: Check Gmail Inbox
 on:
   schedule:
     - cron: "*/2 * * * *"
-  
-  workflow_dispatch:
 
 jobs:
   check-email:
@@ -21,6 +19,9 @@ jobs:
 
     - name: Install dependencies
       run: |
+        apt-get update
+        apt-get install -y xvfb
+
         pip install python-telegram-bot
 
     - name: Run script
@@ -36,6 +37,9 @@ jobs:
         import email
         from email.header import decode_header
         from telegram import Bot
+
+        os.system('Xvfb :99 -screen 0 1024x768x24 > /dev/null 2>&1 &')
+        os.environ['DISPLAY'] = ':99'
 
         # Telegram Bot setup
         bot_token = os.getenv('TELEGRAM_BOT_TOKEN')
