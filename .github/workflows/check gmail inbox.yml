@@ -13,7 +13,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-
+    
     - name: Checkout code
       uses: actions/checkout@v2
 
@@ -25,14 +25,15 @@ jobs:
     - name: Install dependencies
       run: |
         pip install python-telegram-bot
-        sudo apt-get update
+        sudo apt-get update 
         sudo apt-get install imagemagick
 
     - name: Run script
       env:
+        MAGICK_MODULES_DISABLED: ALL
         MAGICK_OCL_DEVICE: OFF
         MAGICK_THREAD_LIMIT: 1
-        TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}  
+        TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
         TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
         GMAIL_USERNAME: ${{ secrets.GMAIL_USERNAME }}
         GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
@@ -55,40 +56,41 @@ jobs:
         
         def send_telegram_message(message):
           try:
-            bot.send_message(chat_id=chat_id, text=message)
+            bot.send_message(chat_id=chat_id, text=message)  
           except TelegramError as e:
             print(f"Failed to send message: {e}")
             
         def decode_subject(subject):
+        
           # Decode email subject
-          
           decoded_subject = decode_header(subject)[0][0]
           if isinstance(decoded_subject, bytes):
             return decoded_subject.decode()
           return decoded_subject
-          
+        
         def check_gmail():
-          
-          # Gmail login
-          username = os.getenv('GMAIL_USERNAME') 
+        
+          # Gmail credentials
+          username = os.getenv('GMAIL_USERNAME')
           password = os.getenv('GMAIL_APP_PASSWORD')
           
           try:
-            # Connect and check for unread emails
+            # Connect to Gmail
             with smtplib.SMTP_SSL("smtp.gmail.com", 465) as smtp:
               
               smtp.login(username, password)
               smtp.select('INBOX')
 
-              _, data = smtp.search(None, "UNSEEN")
+              # Check for unread emails
+              _, data = smtp.search(None, "UNSEEN") 
               email_ids = data[0].split()
               
               for id in email_ids:
                 # Fetch email data
-                _, email_data = smtp.fetch(id, "(RFC822)") 
+                _, email_data = smtp.fetch(id, "(RFC822)")
                 raw_email = email_data[0][1]
                 
-                # Parse email data
+                # Parse email contents
                 msg = email.message_from_bytes(raw_email)
                 
                 subject = decode_subject(msg["Subject"])
@@ -104,17 +106,17 @@ jobs:
                 else:
                   body = msg.get_payload(decode=True).decode()
                   
-                # Send Telegram message  
+                # Send Telegram message
                 message = f"Subject: {subject}\nFrom: {sender}\n\n{body}"
                 send_telegram_message(message)
-                
+
           except Exception as e:
             print(f"Error: {e}")
             
         def main():
         
           while True:
-            check_gmail() 
+            check_gmail()
             time.sleep(120)
             
         if __name__ == '__main__':
