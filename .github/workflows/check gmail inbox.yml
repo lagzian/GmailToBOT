@@ -3,6 +3,8 @@ name: Check Gmail Inbox
 on:
   schedule:
     - cron: "*/2 * * * *"
+    
+  workflow_dispatch:
 
 jobs:
   check-email:
