@@ -61,16 +61,15 @@ async def fetch_emails_and_send_telegram():
                 if part.get_content_type() == 'text/plain':
                     body = part.get_payload()
                     break
-                elif part.get_content_type() == 'text/html':
-                    html_body = part.get_payload()
-                    soup = BeautifulSoup(html_body, 'html.parser')
-                    body = soup.get_text()
-                    break
         else:
             body = email_message.get_payload()
 
+        # Remove HTML tags from the body if it contains HTML
+        soup = BeautifulSoup(body, 'html.parser')
+        plain_text_body = soup.get_text()
+
         # Truncate the message if it exceeds the limit
-        message = f"Subject: {subject}\nFrom: {sender}\n\n{body}"
+        message = f"Subject: {subject}\nFrom: {sender}\n\n{plain_text_body}"
         if len(message) > 4096:
             message = message[:4093] + "..."
 
