@@ -1,0 +1,100 @@
+name: Check Gmail Inbox
+
+on:
+  schedule:
+    - cron: "*/2 * * * *"
+  workflow_dispatch:
+
+jobs:
+  check-email:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Set up Python
+      uses: actions/setup-python@v2
+      with:
+        python-version: 3.9
+
+    - name: Check out code
+      uses: actions/checkout@v2
+
+    - name: Install dependencies
+      run: |
+        pip install python-telegram-bot
+
+    - name: Run script
+      env:
+        TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+        TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        GMAIL_USERNAME: ${{ secrets.GMAIL_USERNAME }}
+        GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
+      run: |
+        import os
+        import time
+        import smtplib
+        import email
+        from email.header import decode_header
+        from telegram import Bot
+
+        async def send_telegram_message():
+            # Replace 'YOUR_BOT_TOKEN' with your actual bot token
+            bot_token = os.getenv('TELEGRAM_BOT_TOKEN')
+
+            # Initialize the bot
+            bot = Bot(token=bot_token)
+
+            # Replace 'YOUR_CHAT_ID' with the desired chat ID or use a variable
+            chat_id = os.getenv('TELEGRAM_CHAT_ID')
+
+            # Replace 'YOUR_MESSAGE' with the message you want to send
+            message = 'test test'
+
+            # Send the message
+            await bot.send_message(chat_id=chat_id, text=message)
+
+        def decode_subject(subject):
+            decoded_subject = decode_header(subject)[0][0]
+            if isinstance(decoded_subject, bytes):
+                return decoded_subject.decode()
+            return decoded_subject
+
+        def check_gmail_inbox():
+            # Gmail App Password setup
+            gmail_username = os.getenv('GMAIL_USERNAME')
+            app_password = os.getenv('GMAIL_APP_PASSWORD')
+
+            try:
+                with smtplib.SMTP_SSL("smtp.gmail.com", 465) as smtp:
+                    smtp.login(gmail_username, app_password)
+                    smtp.select('INBOX')
+                    _, data = smtp.search(None, "UNSEEN")
+                    email_ids = data[0].split()
+                    for email_id in email_ids:
+                        _, email_data = smtp.fetch(email_id, "(RFC822)")
+                        raw_email = email_data[0][1]
+                        msg = email.message_from_bytes(raw_email)
+                        subject = decode_subject(msg["Subject"])
+                        sender = msg["From"]
+                        body = ""
+
+                        if msg.is_multipart():
+                            for part in msg.walk():
+                                content_type = part.get_content_type()
+                                if content_type == "text/plain":
+                                    body = part.get_payload(decode=True).decode()
+                                    break
+                        else:
+                            body = msg.get_payload(decode=True).decode()
+
+                        formatted_message = f"Subject: {subject}\nFrom: {sender}\n\n{body}"
+                        asyncio.run(send_telegram_message(formatted_message))
+            except Exception as e:
+                print(f"An error occurred: {e}")
+
+        def main():
+            while True:
+                check_gmail_inbox()
+                time.sleep(120)  # Sleep for 2 minutes (120 seconds)
+
+        if __name__ == '__main__':
+            main()
