@@ -3,7 +3,7 @@ import imaplib
 import email
 import os
 
-from telegram import Bot, InlineKeyboardButton, InlineKeyboardMarkup 
+from telegram import Bot, InlineKeyboardButton, InlineKeyboardMarkup  
 from telegram.ext import CallbackQueryHandler
 from bs4 import BeautifulSoup
 from email.header import decode_header
@@ -55,13 +55,13 @@ async def fetch_emails_and_send_telegram():
 
 def get_email_body(email_msg):
   # Logic to extract plain text body
-  
+
 def build_telegram_message(subject, sender, body, email_id):
   # Logic to build message string
-
+  
 def build_keyboard(email_id):
   keyboard = [[InlineKeyboardButton("Delete", callback_data=email_id)]]
-  return InlineKeyboardMarkup(keyboard) 
+  return InlineKeyboardMarkup(keyboard)
 
 async def delete_email(update, context):
   query = update.callback_query
