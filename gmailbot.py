@@ -18,7 +18,7 @@ mail = imaplib.IMAP4_SSL('imap.gmail.com')
 mail.login(username, password)
 
 # Callback function to handle the delete action
-def handle_delete_action(update, context):
+def handle_delete_action(bot, update):
     query = update.callback_query
     email_id = query.data
 
@@ -27,7 +27,7 @@ def handle_delete_action(update, context):
     mail.expunge()
 
     # Send a confirmation message
-    query.answer(text='Email deleted successfully.')
+    bot.send_message(chat_id=query.message.chat_id, text='Email deleted successfully.')
 
 # Function to fetch emails and send to Telegram
 async def fetch_emails_and_send_telegram():
@@ -100,7 +100,7 @@ async def fetch_emails_and_send_telegram():
 asyncio.run(fetch_emails_and_send_telegram())
 
 # Set up the Telegram bot and add the delete action handler
-updater = Updater(token=os.environ['TELEGRAM_BOT_TOKEN'], use_context=True)
+updater = Updater(token=os.environ['TELEGRAM_BOT_TOKEN'])
 dispatcher = updater.dispatcher
 dispatcher.add_handler(CallbackQueryHandler(handle_delete_action))
 
