@@ -68,8 +68,11 @@ async def fetch_emails_and_send_telegram():
         soup = BeautifulSoup(body, 'lxml')
         plain_text_body = soup.get_text()
 
+        # Add "📧NEW EMAIL📧" header to the message
+        header = "📧NEW EMAIL📧"
+        message = f"{header}\nSubject: {subject}\nFrom: {sender}\n\n{plain_text_body}"
+
         # Truncate the message if it exceeds the limit
-        message = f"Subject: {subject}\nFrom: {sender}\n\n{plain_text_body}"
         if len(message) > 4096:
             message = message[:4093] + "..."
 
