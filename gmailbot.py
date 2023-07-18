@@ -65,7 +65,7 @@ async def fetch_emails_and_send_telegram():
             body = email_message.get_payload()
 
         # Remove HTML tags from the body if it contains HTML
-        soup = BeautifulSoup(body, 'html.parser')
+        soup = BeautifulSoup(body, 'lxml')
         plain_text_body = soup.get_text()
 
         # Truncate the message if it exceeds the limit
