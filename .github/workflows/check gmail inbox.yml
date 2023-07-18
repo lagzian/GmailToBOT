@@ -25,8 +25,8 @@ jobs:
     - name: Install dependencies
       run: |
         pip install python-telegram-bot
-        apt-get update
-        apt-get install -y imagemagick
+        sudo apt-get update
+        sudo apt-get install -y imagemagick
 
     - name: Run script
       env:
