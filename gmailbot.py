@@ -3,7 +3,15 @@ import imaplib
 import email
 import os
 from telegram import Bot
-import html2text
+from html.parser import HTMLParser
+
+class MyHTMLParser(HTMLParser):
+    def __init__(self):
+        super().__init__()
+        self.text = []
+
+    def handle_data(self, data):
+        self.text.append(data)
 
 async def fetch_emails_and_send_telegram():
     # Get the Telegram bot token from GitHub secret
@@ -55,8 +63,9 @@ async def fetch_emails_and_send_telegram():
                     break
                 elif part.get_content_type() == 'text/html':
                     html_body = part.get_payload()
-                    h = html2text.HTML2Text()
-                    body = h.handle(html_body)
+                    parser = MyHTMLParser()
+                    parser.feed(html_body)
+                    body = ''.join(parser.text)
                     break
         else:
             body = email_message.get_payload()
