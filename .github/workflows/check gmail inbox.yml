@@ -35,22 +35,19 @@ jobs:
         import email
         from email.header import decode_header
         from telegram import Bot
+        from telegram.utils.request import Request
+        from telegram.error import TelegramError
 
-        async def send_telegram_message():
-            # Replace 'YOUR_BOT_TOKEN' with your actual bot token
-            bot_token = os.getenv('TELEGRAM_BOT_TOKEN')
+        # Telegram Bot setup
+        bot_token = os.getenv('TELEGRAM_BOT_TOKEN')
+        chat_id = os.getenv('TELEGRAM_CHAT_ID')
+        bot = Bot(token=bot_token, request=Request(con_pool_size=8))
 
-            # Initialize the bot
-            bot = Bot(token=bot_token)
-
-            # Replace 'YOUR_CHAT_ID' with the desired chat ID or use a variable
-            chat_id = os.getenv('TELEGRAM_CHAT_ID')
-
-            # Replace 'YOUR_MESSAGE' with the message you want to send
-            message = 'test test'
-
-            # Send the message
-            await bot.send_message(chat_id=chat_id, text=message)
+        def send_telegram_message(message):
+            try:
+                bot.send_message(chat_id=chat_id, text=message)
+            except TelegramError as e:
+                print(f"Failed to send Telegram message: {e}")
 
         def decode_subject(subject):
             decoded_subject = decode_header(subject)[0][0]
@@ -87,7 +84,7 @@ jobs:
                             body = msg.get_payload(decode=True).decode()
 
                         formatted_message = f"Subject: {subject}\nFrom: {sender}\n\n{body}"
-                        asyncio.run(send_telegram_message(formatted_message))
+                        send_telegram_message(formatted_message)
             except Exception as e:
                 print(f"An error occurred: {e}")
 
