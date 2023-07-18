@@ -2,34 +2,10 @@ import asyncio
 import imaplib
 import email
 import os
-from telegram import Bot, InlineKeyboardButton, InlineKeyboardMarkup
-from telegram.ext import Updater, CallbackQueryHandler
+from telegram import Bot
 from bs4 import BeautifulSoup
 from email.header import decode_header
 
-# Gmail account details
-username = 'milad.lagzian@gmail.com'
-password = os.environ['GMAIL_APP_PASSWORD']
-
-# Connect to Gmail IMAP server
-mail = imaplib.IMAP4_SSL('imap.gmail.com')
-
-# Login to the account
-mail.login(username, password)
-
-# Callback function to handle the delete action
-def handle_delete_action(bot, update):
-    query = update.callback_query
-    email_id = query.data
-
-    # Delete the email from the server
-    mail.store(email_id, '+FLAGS', '\\Deleted')
-    mail.expunge()
-
-    # Send a confirmation message
-    bot.send_message(chat_id=query.message.chat_id, text='Email deleted successfully.')
-
-# Function to fetch emails and send to Telegram
 async def fetch_emails_and_send_telegram():
     # Get the Telegram bot token from GitHub secret
     bot_token = os.environ['TELEGRAM_BOT_TOKEN']
@@ -39,6 +15,16 @@ async def fetch_emails_and_send_telegram():
 
     # Get the Telegram chat ID from GitHub secret
     chat_id = os.environ['TELEGRAM_CHAT_ID']
+
+    # Gmail account details
+    username = 'milad.lagzian@gmail.com'
+    password = os.environ['GMAIL_APP_PASSWORD']
+
+    # Connect to Gmail IMAP server
+    mail = imaplib.IMAP4_SSL('imap.gmail.com')
+
+    # Login to the account
+    mail.login(username, password)
 
     # Select the mailbox (e.g., 'INBOX')
     mailbox = 'INBOX'
@@ -87,23 +73,11 @@ async def fetch_emails_and_send_telegram():
         if len(message) > 4096:
             message = message[:4093] + "..."
 
-        # Create inline keyboard with delete button
-        keyboard = InlineKeyboardMarkup([[InlineKeyboardButton('Delete', callback_data=email_id.decode())]])
-
-        # Send the message with inline keyboard to Telegram
-        await bot.send_message(chat_id=chat_id, text=message, reply_markup=keyboard)
+        # Send the message to Telegram
+        await bot.send_message(chat_id=chat_id, text=message)
 
     # Logout and close the connection
     mail.logout()
 
 # Run the function in an asynchronous event loop
 asyncio.run(fetch_emails_and_send_telegram())
-
-# Set up the Telegram bot and add the delete action handler
-updater = Updater(token=os.environ['TELEGRAM_BOT_TOKEN'])
-dispatcher = updater.dispatcher
-dispatcher.add_handler(CallbackQueryHandler(handle_delete_action))
-
-# Start the bot
-updater.start_polling()
-updater.idle()
