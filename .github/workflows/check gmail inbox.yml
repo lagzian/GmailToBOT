@@ -2,7 +2,7 @@ name: Fetch Emails and Send Telegram
 on:
   workflow_dispatch:
   schedule:
-    - cron: "*/6 * * * *"
+    - cron: "*/10 * * * *"
 
 jobs:
   fetch_emails:
