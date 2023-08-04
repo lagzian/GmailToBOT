@@ -1,95 +1,32 @@
-import asyncio
-import imaplib
-import email
-import os
-from telegram import Bot
-from bs4 import BeautifulSoup
-from email.header import decode_header
+name: Fetch Emails and Send Telegram
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "*/30 * * * *"
 
-async def fetch_emails_and_send_telegram():
-    # Get the Telegram bot token from GitHub secret
-    bot_token = os.environ['TELEGRAM_BOT_TOKEN']
+jobs:
+  fetch_emails:
+    runs-on: ubuntu-latest
 
-    # Initialize the bot
-    bot = Bot(token=bot_token)
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
 
-    # Get the Telegram chat ID from GitHub secret
-    chat_id = os.environ['TELEGRAM_CHAT_ID']
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.9
 
-    # Get the Gmail username from GitHub secret
-    gmail_username = os.environ['GMAIL_USERNAME']
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
 
-    # Get the Gmail app password from GitHub secret
-    gmail_app_password = os.environ['GMAIL_APP_PASSWORD']
+      - name: Set environment variables
+        run: |
+          echo "TELEGRAM_BOT_TOKEN=${{ secrets.TELEGRAM_BOT_TOKEN }}" >> $GITHUB_ENV
+          echo "TELEGRAM_CHAT_ID=${{ secrets.TELEGRAM_CHAT_ID }}" >> $GITHUB_ENV
+          echo "GMAIL_APP_PASSWORD=${{ secrets.GMAIL_APP_PASSWORD }}" >> $GITHUB_ENV
 
-    # Connect to Gmail IMAP server
-    mail = imaplib.IMAP4_SSL('imap.gmail.com')
-
-    # Login to the account
-    mail.login(gmail_username, gmail_app_password)
-
-    # Select the mailbox (e.g., 'INBOX')
-    mailbox = 'INBOX'
-    mail.select(mailbox)
-
-    # Search for new emails
-    _, data = mail.search(None, 'UNSEEN')
-
-    # Fetch the email IDs
-    email_ids = data[0].split()
-
-    # Process each email
-    for email_id in email_ids:
-        _, msg_data = mail.fetch(email_id, '(RFC822)')
-
-        # Parse the email message
-        raw_email = msg_data[0][1]
-        email_message = email.message_from_bytes(raw_email)
-
-        # Decode subject and sender headers
-        subject = decode_header(email_message['Subject'])[0][0]
-        if isinstance(subject, bytes):
-            subject = subject.decode('utf-8')
-        
-        sender = decode_header(email_message['From'])[0][0]
-        if isinstance(sender, bytes):
-            sender = sender.decode('utf-8')
-
-        # Extract the desired information from the email
-        body = ''
-
-        if email_message.is_multipart():
-            for part in email_message.get_payload():
-                content_type = part.get_content_type()
-
-                if content_type == 'text/plain':
-                    charset = part.get_content_charset()
-                    body = part.get_payload(decode=True)
-                    if charset:
-                        body = body.decode(charset)
-                    else:
-                        body = body.decode('utf-8', 'ignore')
-                    break
-
-                elif content_type == 'text/html':
-                    body = part.get_payload(decode=True)
-                    soup = BeautifulSoup(body, 'lxml')
-                    body = soup.get_text()
-                    break
-
-        # Add "📧NEW EMAIL📧" header to the message
-        header = "📧NEW EMAIL📧"
-        message = f"{header}\nSubject: {subject}\nFrom: {sender}\n\n{body}"
-
-        # Truncate the message if it exceeds the limit
-        if len(message) > 4096:
-            message = message[:4093] + "..."
-
-        # Send the message to Telegram
-        await bot.send_message(chat_id=chat_id, text=message)
-
-    # Logout and close the connection
-    mail.logout()
-
-# Run the function in an asynchronous event loop
-asyncio.run(fetch_emails_and_send_telegram())
+      - name: Run script
+        run: python gmailbot.py
