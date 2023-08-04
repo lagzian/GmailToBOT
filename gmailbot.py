@@ -78,7 +78,7 @@ async def fetch_emails_and_send_telegram():
                     break
 
         # Add "📧NEW EMAIL📧" header to the message
-        header = "<b>📧📭NEW EMAIL📭📧</b>"
+        header = "🔔📧📭NEW EMAIL📭📧🔔"
         message = f"{header}\nSubject: {subject}\nFrom: {sender}\n\n{body}"
 
         # Truncate the message if it exceeds the limit
