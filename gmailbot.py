@@ -16,15 +16,17 @@ async def fetch_emails_and_send_telegram():
     # Get the Telegram chat ID from GitHub secret
     chat_id = os.environ['TELEGRAM_CHAT_ID']
 
-    # Gmail account details
-    username = 'milad.lagzian@gmail.com'
-    password = os.environ['GMAIL_APP_PASSWORD']
+    # Get the Gmail username from GitHub secret
+    gmail_username = os.environ['GMAIL_USERNAME']
+
+    # Get the Gmail app password from GitHub secret
+    gmail_app_password = os.environ['GMAIL_APP_PASSWORD']
 
     # Connect to Gmail IMAP server
     mail = imaplib.IMAP4_SSL('imap.gmail.com')
 
     # Login to the account
-    mail.login(username, password)
+    mail.login(gmail_username, gmail_app_password)
 
     # Select the mailbox (e.g., 'INBOX')
     mailbox = 'INBOX'
@@ -75,8 +77,8 @@ async def fetch_emails_and_send_telegram():
                     body = soup.get_text()
                     break
 
-        # Add "📭📩NEW EMAIL📩📭" header to the message
-        header = "📭📩NEW EMAIL📩📭"
+        # Add "📧NEW EMAIL📧" header to the message
+        header = "📧NEW EMAIL📧"
         message = f"{header}\nSubject: {subject}\nFrom: {sender}\n\n{body}"
 
         # Truncate the message if it exceeds the limit
