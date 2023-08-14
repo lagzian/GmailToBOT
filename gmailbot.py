@@ -3,7 +3,8 @@ import imaplib
 import email
 import os
 from telegram import Bot, ReplyKeyboardMarkup, KeyboardButton, Update
-from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, CallbackContext
+from telegram.ext import Updater, CommandHandler, MessageHandler, CallbackContext
+from telegram.ext.filters import Filters
 from bs4 import BeautifulSoup
 from email.header import decode_header
 
