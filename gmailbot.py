@@ -2,10 +2,10 @@ import asyncio
 import imaplib
 import email
 import os
+import bleach
 from telegram import Bot
 from bs4 import BeautifulSoup
 from email.header import decode_header
-import bleach
 
 async def fetch_emails_and_send_telegram():
     # Get the Telegram bot token from GitHub secret
@@ -74,7 +74,7 @@ async def fetch_emails_and_send_telegram():
 
                 elif content_type == 'text/html':
                     body = part.get_payload(decode=True)
-                    soup = BeautifulSoup(body, 'lxml')
+                    soup = BeautifulSoup(body, 'html.parser')  # Use html.parser for sanitization
                     body = soup.get_text()
                     break
 
@@ -96,8 +96,5 @@ async def fetch_emails_and_send_telegram():
         # Delete the email from Gmail
         mail.store(email_id, '+FLAGS', '(\\Deleted)')
 
-    # Logout and close the connection
-    mail.logout()
-
-# Run the function in an asynchronous event loop
+# Run the asyncio event loop
 asyncio.run(fetch_emails_and_send_telegram())
