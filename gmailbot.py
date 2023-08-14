@@ -2,8 +2,7 @@ import asyncio
 import imaplib
 import email
 import os
-import bleach
-from telegram import Bot
+from telegram import Bot, ReplyKeyboardMarkup, KeyboardButton #instead of types
 from bs4 import BeautifulSoup
 from email.header import decode_header
 
@@ -74,27 +73,30 @@ async def fetch_emails_and_send_telegram():
 
                 elif content_type == 'text/html':
                     body = part.get_payload(decode=True)
-                    soup = BeautifulSoup(body, 'html.parser')  # Use html.parser for sanitization
+                    soup = BeautifulSoup(body, 'lxml')
                     body = soup.get_text()
                     break
 
-        # Sanitize the HTML content using bleach
-        sanitized_body = bleach.clean(body, tags=[], strip=True)
-
-        # Add "🔔📧📭NEW EMAIL📭📧🔔" header to the message
+        # Add "📧NEW EMAIL📧" header to the message
         header = "🔔📧📭NEW EMAIL📭📧🔔"
-        message = f"{header}\nSubject: {subject}\nFrom: {sender}\n\n{sanitized_body}"
+        message = f"{header}\nSubject: {subject}\nFrom: {sender}\n\n{body}"
 
         # Truncate the message if it exceeds the limit
         if len(message) > 4096:
             message = message[:4093] + "..."
 
-        # Send the message to Telegram with HTML formatting
-        formatted_message = f"<b>{header}</b>\n\n<pre>{message}</pre>"
-        await bot.send_message(chat_id=chat_id, text=formatted_message, parse_mode='HTML')
+        # Send the message to Telegram with a delete button
+        button = KeyboardButton('Delete') 
+        reply_markup = ReplyKeyboardMarkup(one_time_keyboard=True)
+        reply_markup.add(button)
+        await bot.send_message(chat_id=chat_id, text=message, reply_markup=reply_markup)
 
         # Delete the email from Gmail
         mail.store(email_id, '+FLAGS', '(\\Deleted)')
 
-# Run the asyncio event loop
+# Logout and close the connection
+    mail.logout()
+
+# Run the function in an asynchronous event loop
 asyncio.run(fetch_emails_and_send_telegram())
+
