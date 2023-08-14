@@ -84,8 +84,7 @@ async def fetch_emails_and_send_telegram():
           message = message[:4093] + "..."
 
       # Send the message to Telegram with a delete button
-      delete_emoji = "\U0001F5D1"  # Emoji code for trash bin
-      button = KeyboardButton(delete_emoji)
+      button = KeyboardButton('Delete')
       
       # Pass the keyboard in ReplyKeyboardMarkup 
       reply_markup = ReplyKeyboardMarkup(keyboard=[[button]], one_time_keyboard=True)
