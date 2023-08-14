@@ -2,101 +2,94 @@ import asyncio
 import imaplib
 import email
 import os
-
 from telegram import Bot
-from telegram.ext import Dispatcher, CommandHandler  
 from bs4 import BeautifulSoup
 from email.header import decode_header
 
-async def fetch_emails_and_send_telegram(delete_emails=False):
+async def fetch_emails_and_send_telegram():
+    # Get the Telegram bot token from GitHub secret
+    bot_token = os.environ['TELEGRAM_BOT_TOKEN']
 
-  # Get Telegram bot token
-  bot_token = os.environ['TELEGRAM_BOT_TOKEN']
+    # Initialize the bot
+    bot = Bot(token=bot_token)
 
-  # Initialize Telegram bot
-  bot = Bot(token=bot_token)
+    # Get the Telegram chat ID from GitHub secret
+    chat_id = os.environ['TELEGRAM_CHAT_ID']
 
-  # Get Telegram chat ID
-  chat_id = os.environ['TELEGRAM_CHAT_ID']
+    # Get the Gmail username from GitHub secret
+    gmail_username = os.environ['GMAIL_USERNAME']
 
-  # Get Gmail username
-  gmail_username = os.environ['GMAIL_USERNAME']
+    # Get the Gmail app password from GitHub secret
+    gmail_app_password = os.environ['GMAIL_APP_PASSWORD']
 
-  # Get Gmail app password
-  gmail_app_password = os.environ['GMAIL_APP_PASSWORD']
+    # Connect to Gmail IMAP server
+    mail = imaplib.IMAP4_SSL('imap.gmail.com')
 
-  # Connect to Gmail
-  mail = imaplib.IMAP4_SSL('imap.gmail.com')
-  mail.login(gmail_username, gmail_app_password)
+    # Login to the account
+    mail.login(gmail_username, gmail_app_password)
 
-  # Select inbox
-  mailbox = 'INBOX'
-  mail.select(mailbox)
+    # Select the mailbox (e.g., 'INBOX')
+    mailbox = 'INBOX'
+    mail.select(mailbox)
 
-  # Search for unseen emails
-  _, data = mail.search(None, 'UNSEEN')
-  email_ids = data[0].split()
+    # Search for new emails
+    _, data = mail.search(None, 'UNSEEN')
 
-  # Process each email
-  for email_id in email_ids:
-    _, msg_data = mail.fetch(email_id, '(RFC822)')
-    raw_email = msg_data[0][1]
-    email_msg = email.message_from_bytes(raw_email)
+    # Fetch the email IDs
+    email_ids = data[0].split()
 
-    # Decode headers
-    subject = decode_header(email_msg['Subject'])[0][0]
-    if isinstance(subject, bytes):
-      subject = subject.decode()
-    sender = decode_header(email_msg['From'])[0][0]
-    if isinstance(sender, bytes):
-      sender = sender.decode()
+    # Process each email
+    for email_id in email_ids:
+        _, msg_data = mail.fetch(email_id, '(RFC822)')
 
-    # Extract body content
-    body = ''
-    if email_msg.is_multipart():
-      for part in email_msg.get_payload():
-        if part.get_content_type() == 'text/plain':
-          charset = part.get_content_charset()
-          body = part.get_payload(decode=True)
-          if charset:
-            body = body.decode(charset)
-          else:
-            body = body.decode('utf-8', 'ignore')
-          break
-        elif part.get_content_type() == 'text/html':
-          body = part.get_payload(decode=True)
-          soup = BeautifulSoup(body, 'lxml')
-          body = soup.get_text()
-          break
+        # Parse the email message
+        raw_email = msg_data[0][1]
+        email_message = email.message_from_bytes(raw_email)
 
-    # Create Telegram message
-    header = "🔔📧📭NEW EMAIL📭📧🔔"  
-    msg = f"{header}\nSubject: {subject}\nFrom: {sender}\n\n{body}"
-    if len(msg) > 4096:
-      msg = msg[:4093] + "..."
-    
-    # Send message to Telegram
-    button = KeyboardButton('Delete')
-    reply_markup = ReplyKeyboardMarkup([[button]], one_time_keyboard=True)
-    await bot.send_message(chat_id, text=msg, reply_markup=reply_markup)
+        # Decode subject and sender headers
+        subject = decode_header(email_message['Subject'])[0][0]
+        if isinstance(subject, bytes):
+            subject = subject.decode('utf-8')
+        
+        sender = decode_header(email_message['From'])[0][0]
+        if isinstance(sender, bytes):
+            sender = sender.decode('utf-8')
 
-  if delete_emails:
-    mail.store(email_id, '+FLAGS', '(\\Deleted)')
+        # Extract the desired information from the email
+        body = ''
 
-def delete_handler(update, context):
-  delete_emails = True
-  asyncio.run(fetch_emails_and_send_telegram(delete_emails))
+        if email_message.is_multipart():
+            for part in email_message.get_payload():
+                content_type = part.get_content_type()
 
-def main():
+                if content_type == 'text/plain':
+                    charset = part.get_content_charset()
+                    body = part.get_payload(decode=True)
+                    if charset:
+                        body = body.decode(charset)
+                    else:
+                        body = body.decode('utf-8', 'ignore')
+                    break
 
-  bot_token = os.environ['TELEGRAM_BOT_TOKEN']
+                elif content_type == 'text/html':
+                    body = part.get_payload(decode=True)
+                    soup = BeautifulSoup(body, 'lxml')
+                    body = soup.get_text()
+                    break
 
-  bot = Bot(token=bot_token)
+        # Add "📧NEW EMAIL📧" header to the message
+        header = "🔔📧📭NEW EMAIL📭📧🔔"
+        message = f"{header}\nSubject: {subject}\nFrom: {sender}\n\n{body}"
 
-  dispatcher = Dispatcher(bot, None, workers=0)
-  dispatcher.add_handler(CommandHandler('delete', delete_handler))
+        # Truncate the message if it exceeds the limit
+        if len(message) > 4096:
+            message = message[:4093] + "..."
 
-  asyncio.run(fetch_emails_and_send_telegram())  
+        # Send the message to Telegram
+        await bot.send_message(chat_id=chat_id, text=message)
 
-if __name__ == '__main__':
-  main()
+    # Logout and close the connection
+    mail.logout()
+
+# Run the function in an asynchronous event loop
+asyncio.run(fetch_emails_and_send_telegram())
