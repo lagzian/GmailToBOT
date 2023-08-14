@@ -98,4 +98,4 @@ async def fetch_emails_and_send_telegram():
     mail.logout()
 
 # Run the function in an asynchronous event loop
-asyncio.run(fetch_emails_and_
+asyncio.run(fetch_emails_and_send_telegram())
