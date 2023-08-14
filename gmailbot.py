@@ -8,68 +8,87 @@ from email.header import decode_header
 
 async def fetch_emails_and_send_telegram():
 
-  # Get bot token
+  # Get the Telegram bot token from GitHub secret
   bot_token = os.environ['TELEGRAM_BOT_TOKEN']
-  
-  # Initialize bot
+
+  # Initialize the bot 
   bot = Bot(token=bot_token)
 
-  # Get chat ID
+  # Get the Telegram chat ID from GitHub secret
   chat_id = os.environ['TELEGRAM_CHAT_ID']
 
-  # Connect to Gmail
+  # Get the Gmail username from GitHub secret
+  gmail_username = os.environ['GMAIL_USERNAME']
+
+  # Get the Gmail app password from GitHub secret
+  gmail_app_password = os.environ['GMAIL_APP_PASSWORD']
+
+  # Connect to Gmail IMAP server
   mail = imaplib.IMAP4_SSL('imap.gmail.com')
-  mail.login(os.environ['GMAIL_USERNAME'], os.environ['GMAIL_APP_PASSWORD'])
 
-  # Select inbox
-  mail.select('INBOX')
+  # Login to the account
+  mail.login(gmail_username, gmail_app_password)
 
-  # Search for unseen emails
+  # Select the mailbox (e.g., 'INBOX')
+  mailbox = 'INBOX'
+  mail.select(mailbox)
+
+  # Search for new emails
   _, data = mail.search(None, 'UNSEEN')
+
+  # Fetch the email IDs
   email_ids = data[0].split()
 
   # Process each email
   for email_id in email_ids:
+      _, msg_data = mail.fetch(email_id, '(RFC822)')
 
-    # Fetch email data
-    _, msg_data = mail.fetch(email_id, '(RFC822)')
-    raw_email = msg_data[0][1]
-    email_msg = email.message_from_bytes(raw_email)
+      # Parse the email message
+      raw_email = msg_data[0][1]
+      email_message = email.message_from_bytes(raw_email)
 
-    # Parse headers
-    subject = decode_header(email_msg['Subject'])[0][0]
-    subject = subject if isinstance(subject, str) else subject.decode()
-    sender = decode_header(email_msg['From'])[0][0]
-    sender = sender if isinstance(sender, str) else sender.decode()
+      # Decode subject and sender headers
+      subject = decode_header(email_message['Subject'])[0][0]
+      if isinstance(subject, bytes):
+          subject = subject.decode('utf-8')
 
-    # Parse body
-    body = ''
-    if email_msg.is_multipart():
-      for part in email_msg.get_payload():
-        if part.get_content_type() == 'text/plain':
-          body = part.get_payload(decode=True)
-          body = body.decode() if type(body) == bytes else body  
-          break
+      sender = decode_header(email_message['From'])[0][0]
+      if isinstance(sender, bytes):
+          sender = sender.decode('utf-8')
 
-    # Create message 
-    header = "🔔📧📭NEW EMAIL📭📧🔔"
-    msg_text = f"{header}\nSubject: {subject}\nFrom: {sender}\n\n{body}"
-    if len(msg_text) > 4096:
-      msg_text = msg_text[:4093] + "..."
-    
-    # Send Email Message
-    await bot.send_message(chat_id=chat_id, text=msg_text)
+      # Extract the desired information from the email body
+      body = ''
+      if email_message.is_multipart():
+          for part in email_message.get_payload():
+              content_type = part.get_content_type()
+              if content_type == 'text/plain':
+                  charset = part.get_content_charset()
+                  body = part.get_payload(decode=True)
+                  if charset:
+                      body = body.decode(charset)
+                  else:
+                      body = body.decode('utf-8', 'ignore')
+                  break
+              elif content_type == 'text/html':
+                  body = part.get_payload(decode=True)
+                  soup = BeautifulSoup(body, 'lxml')
+                  body = soup.get_text()
+                  break
 
-    # Create Inline Keyboard
-    button = InlineKeyboardButton(text='Delete', callback_data='delete')
-    reply_markup = InlineKeyboardMarkup(inline_keyboard=[[button]])
+      # Add "📧NEW EMAIL📧" header to the message
+      header = "🔔📧📭NEW EMAIL📭📧🔔"  
+      message = f"{header}\nSubject: {subject}\nFrom: {sender}\n\n{body}"
 
-    # Send Inline Keyboard
-    await bot.send_message(chat_id=chat_id, reply_markup=reply_markup)
+      # Truncate the message if it exceeds the limit
+      if len(message) > 4096:
+          message = message[:4093] + "..."
 
-    # Delete email
-    mail.store(email_id , '+FLAGS', '\\Deleted') 
+      # Create an inline delete button
+      button = InlineKeyboardButton('Delete', callback_data=email_id)
+      reply_markup = InlineKeyboardMarkup([[button]])
+
+      # Send the message to Telegram with the inline button
+      await bot.send_message(chat_id=chat_id, text=message, reply_markup=reply_markup)
 
 if __name__ == '__main__':
-  
   asyncio.run(fetch_emails_and_send_telegram())
