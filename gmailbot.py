@@ -2,7 +2,7 @@ import asyncio
 import imaplib
 import email
 import os
-from telegram import Bot, types
+from telegram import Bot, type
 from bs4 import BeautifulSoup
 from email.header import decode_header
 
@@ -86,8 +86,8 @@ async def fetch_emails_and_send_telegram():
             message = message[:4093] + "..."
 
         # Send the message to Telegram with a delete button
-        button = types.KeyboardButton('Delete')
-        reply_markup = types.ReplyKeyboardMarkup(one_time_keyboard=True)
+        button = type.KeyboardButton('Delete')
+        reply_markup = type.ReplyKeyboardMarkup(one_time_keyboard=True)
         reply_markup.add(button)
         await bot.send_message(chat_id=chat_id, text=message, reply_markup=reply_markup)
 
