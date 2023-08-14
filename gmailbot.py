@@ -2,25 +2,10 @@ import asyncio
 import imaplib
 import email
 import os
-from telegram import Bot, ReplyKeyboardMarkup, KeyboardButton, Update
-from telegram.ext import Updater, CommandHandler, MessageHandler, CallbackContext
-from telegram.ext.filters import Filters
+from telegram import Bot, ReplyKeyboardMarkup, KeyboardButton
 from bs4 import BeautifulSoup
 from email.header import decode_header
-
-# Define a callback function to handle messages
-def message_handler(update: Update, context: CallbackContext) -> None:
-    user_response = update.message.text.lower()
-
-    # If the user responds with 'delete', mark the email for deletion
-    if user_response == 'delete':
-        email_id = context.user_data.get('email_id')
-        if email_id is not None:
-            mail.store(email_id, '+FLAGS', '(\\Deleted)')
-            context.user_data['email_id'] = None
-            update.message.reply_text('Email marked for deletion.')
-        else:
-            update.message.reply_text('No email to delete.')
+from telegram.ext import Updater, CommandHandler, MessageHandler, CallbackContext, Filters
 
 async def fetch_emails_and_send_telegram():
 
@@ -54,11 +39,6 @@ async def fetch_emails_and_send_telegram():
 
     # Fetch the email IDs
     email_ids = data[0].split()
-
-    # Set up the Telegram updater with the message handler
-    updater = Updater(token=bot_token)
-    dispatcher = updater.dispatcher
-    dispatcher.add_handler(MessageHandler(Filters.text & ~Filters.command, message_handler))
 
     # Process each email
     for email_id in email_ids:
@@ -97,7 +77,7 @@ async def fetch_emails_and_send_telegram():
                     break
 
         # Add "📧NEW EMAIL📧" header to the message
-        header = "🔔📧📭NEW EMAIL📭📧🔔"
+        header = "🔔📧📭NEW EMAIL📭📧🔔"  
         message = f"{header}\nSubject: {subject}\nFrom: {sender}\n\n{body}"
 
         # Truncate the message if it exceeds the limit
@@ -106,24 +86,13 @@ async def fetch_emails_and_send_telegram():
 
         # Send the message to Telegram with a delete button
         button = KeyboardButton('Delete')
-
-        # Pass the keyboard in ReplyKeyboardMarkup
+      
+        # Pass the keyboard in ReplyKeyboardMarkup 
         reply_markup = ReplyKeyboardMarkup(keyboard=[[button]], one_time_keyboard=True)
+        await bot.send_message(chat_id=chat_id, text=message, reply_markup=reply_markup)
 
-        # Send the message and store the email ID for later deletion
-        sent_message = bot.send_message(chat_id=chat_id, text=message, reply_markup=reply_markup)
-        context = sent_message.reply_text
-        context.user_data['email_id'] = email_id
-
-        # Wait for a response
-        await asyncio.sleep(60)  # Adjust the waiting time as needed
-
-    # Logout and close the connection
-    mail.expunge()
-    mail.logout()
-
-    # Stop the updater
-    updater.stop()
+        # Delete the email from Gmail
+        mail.store(email_id, '+FLAGS', '(\\Deleted)')
 
 if __name__ == '__main__':
     asyncio.run(fetch_emails_and_send_telegram())
