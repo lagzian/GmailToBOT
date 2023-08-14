@@ -2,7 +2,7 @@ import asyncio
 import imaplib
 import email
 import os
-from telegram import Bot, type
+from telegram import Bot, types
 from bs4 import BeautifulSoup
 from email.header import decode_header
 
@@ -60,9 +60,9 @@ async def fetch_emails_and_send_telegram():
 
         if email_message.is_multipart():
             for part in email_message.get_payload():
-                content_type = part.get_content_type()
+                content_types = part.get_content_types()
 
-                if content_type == 'text/plain':
+                if content_types == 'text/plain':
                     charset = part.get_content_charset()
                     body = part.get_payload(decode=True)
                     if charset:
@@ -71,7 +71,7 @@ async def fetch_emails_and_send_telegram():
                         body = body.decode('utf-8', 'ignore')
                     break
 
-                elif content_type == 'text/html':
+                elif content_types == 'text/html':
                     body = part.get_payload(decode=True)
                     soup = BeautifulSoup(body, 'lxml')
                     body = soup.get_text()
@@ -86,11 +86,17 @@ async def fetch_emails_and_send_telegram():
             message = message[:4093] + "..."
 
         # Send the message to Telegram with a delete button
-        button = type.KeyboardButton('Delete')
-        reply_markup = type.ReplyKeyboardMarkup(one_time_keyboard=True)
+        button = types.KeyboardButton('Delete')
+        reply_markup = types.ReplyKeyboardMarkup(one_time_keyboard=True)
         reply_markup.add(button)
         await bot.send_message(chat_id=chat_id, text=message, reply_markup=reply_markup)
 
         # Delete the email from Gmail
         mail.store(email_id, '+FLAGS', '(\\Deleted)')
+
+    # Logout and close the connection
+    mail.logout()
+
+# Run the function in an asynchronous event loop
+asyncio.run(fetch_emails_and_send_telegram())
 
