@@ -65,7 +65,7 @@ async def fetch_emails_and_send_telegram():
     reply_markup = InlineKeyboardMarkup(inline_keyboard=[[button]])
 
     # Send Inline Keyboard
-    await bot.send_message(chat_id=chat_id, reply_markup=reply_markup)
+    await bot.send_message(chat_id=chat_id, text='', reply_markup=reply_markup)
 
     # Delete email
     mail.store(email_id , '+FLAGS', '\\Deleted') 
