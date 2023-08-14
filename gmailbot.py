@@ -2,7 +2,7 @@ import asyncio
 import imaplib
 import email
 import os
-from telegram import Bot, types
+from telegram import Bot
 from bs4 import BeautifulSoup
 from email.header import decode_header
 import bleach
