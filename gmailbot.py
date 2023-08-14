@@ -91,10 +91,12 @@ async def fetch_emails_and_send_telegram():
       sent_message = await bot.send_message(chat_id=chat_id, text=message, reply_markup=reply_markup)
 
       # Wait for the user's response
-      user_response = await bot.get_response(sent_message)
+      await asyncio.sleep(10)  # Adjust the waiting time as needed
+      updates = await bot.get_updates()
+      user_response = updates[-1].message.text if updates else None
 
       # If the user responds with 'Delete', mark the email for deletion
-      if user_response.text.lower() == 'delete':
+      if user_response and user_response.lower() == 'delete':
           mail.store(email_id, '+FLAGS', '(\\Deleted)')
 
   # Logout and close the connection
