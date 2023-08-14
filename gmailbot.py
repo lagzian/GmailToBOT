@@ -2,9 +2,10 @@ import asyncio
 import imaplib
 import email
 import os
-from telegram import Bot
+from telegram import Bot, types
 from bs4 import BeautifulSoup
 from email.header import decode_header
+import bleach
 
 async def fetch_emails_and_send_telegram():
     # Get the Telegram bot token from GitHub secret
@@ -77,18 +78,19 @@ async def fetch_emails_and_send_telegram():
                     body = soup.get_text()
                     break
 
+        # Sanitize the HTML content using bleach
+        sanitized_body = bleach.clean(body, tags=[], strip=True)
+
         # Add "🔔📧📭NEW EMAIL📭📧🔔" header to the message
         header = "🔔📧📭NEW EMAIL📭📧🔔"
-        message = f"{header}\nSubject: {subject}\nFrom: {sender}\n\n{body}"
+        message = f"{header}\nSubject: {subject}\nFrom: {sender}\n\n{sanitized_body}"
 
         # Truncate the message if it exceeds the limit
         if len(message) > 4096:
             message = message[:4093] + "..."
 
-        # Send the message to Telegram with a delete button
-        delete_button = "\n\n<b>Delete</b>"
-        formatted_message = f"{message}{delete_button}"
-
+        # Send the message to Telegram with HTML formatting
+        formatted_message = f"<b>{header}</b>\n\n<pre>{message}</pre>"
         await bot.send_message(chat_id=chat_id, text=formatted_message, parse_mode='HTML')
 
         # Delete the email from Gmail
