@@ -88,10 +88,18 @@ async def fetch_emails_and_send_telegram():
       
       # Pass the keyboard in ReplyKeyboardMarkup 
       reply_markup = ReplyKeyboardMarkup(keyboard=[[button]], one_time_keyboard=True)
-      await bot.send_message(chat_id=chat_id, text=message, reply_markup=reply_markup)
+      sent_message = await bot.send_message(chat_id=chat_id, text=message, reply_markup=reply_markup)
 
-      # Delete the email from Gmail
-      mail.store(email_id, '+FLAGS', '(\\Deleted)')
+      # Wait for the user's response
+      user_response = await bot.get_response(sent_message)
+
+      # If the user responds with 'Delete', mark the email for deletion
+      if user_response.text.lower() == 'delete':
+          mail.store(email_id, '+FLAGS', '(\\Deleted)')
+
+  # Logout and close the connection
+  mail.expunge()
+  mail.logout()
 
 if __name__ == '__main__':
   asyncio.run(fetch_emails_and_send_telegram())
