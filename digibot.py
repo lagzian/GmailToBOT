@@ -82,7 +82,7 @@ async def main():
         modified_matches.append(match)
 
     # Compose the message
-    message = f"Found {len(modified_matches)} relevant segments.\n{'\n'.join(modified_matches)}"
+    message = f"📌💥Found {len(modified_matches)} relevant MacBook Price💥📌.\n{'\n'.join(modified_matches)}"
 
     # Send the message to Telegram
     await send_to_telegram(message)
