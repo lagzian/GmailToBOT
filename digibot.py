@@ -59,7 +59,7 @@ async def send_to_telegram(message):
 
 async def main():
     # Set the website URL
-    url = "https://www.digikala.com/search/category-drill/ronix/?attributes%5B1027%5D%5B0%5D=3373&sort=20"
+    url = "https://www.digikala.com/search/category-drill/ronix/?attributes%5B1027%5D%5B0%5D=3373&has_selling_stock=1&sort=20"
 
     # Fetch the webpage content
     webpage_content = await fetch_webpage_content(url)
