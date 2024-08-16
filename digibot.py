@@ -71,15 +71,15 @@ async def main():
     matches = re.findall(pattern, webpage_content)
 
     # Remove matches equal to "۱۰۰,۰۰۰,۰۰۰"
-    #matches = [match for match in matches if match != "۱۰۰,۰۰۰,۰۰۰"]
+    matches = [match for match in matches if match != "۱۰۰,۰۰۰,۰۰۰"]
 
     # Modify matches: Remove the first digit if it's greater than 1
-    modified_matches = []
-    for match in matches:
-        first_digit = int(match[0])
-        if first_digit > 9:
-            match = match[9:]
-        modified_matches.append(match)
+    #modified_matches = []
+    #for match in matches:
+        #first_digit = int(match[0])
+        #if first_digit > 1:
+            #match = match[1:]
+        #modified_matches.append(match)
 
     # Compose the message
     message = f"📌💥Found {len(modified_matches)} relevant ronix_drill Price💥📌.\n{'\n'.join(modified_matches)}"
