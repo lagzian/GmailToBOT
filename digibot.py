@@ -65,7 +65,7 @@ async def main():
     webpage_content = await fetch_webpage_content(url)
 
     # Define the desired pattern
-    pattern = r"\d{3},\d{3},\d{3}"
+    pattern = r"\d{1},\d{3},\d{3}"
 
     # Find all matches in the webpage content
     matches = re.findall(pattern, webpage_content)
