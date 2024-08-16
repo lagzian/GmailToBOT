@@ -64,19 +64,20 @@ async def main():
     # Fetch the webpage content
     webpage_content = await fetch_webpage_content(url)
 
-    # Define the desired pattern
-    pattern = r"\d{1},\d{3},\d{3}"
+    # Define the desired pattern (up to 9 digits in the format x,xxx,xxx)
+    pattern = r"\b\d{1},\d{3},\d{3}\b"
 
     # Find all matches in the webpage content
     matches = re.findall(pattern, webpage_content)
 
-    # Remove matches equal to "۱۰۰,۰۰۰,۰۰۰"
-    matches = [match for match in matches if match != "۱۰۰,۰۰۰,۰۰۰"]
+    # Remove matches equal to "۱۰۰,۰۰۰,۰۰۰" and filter out any matches starting with "0"
+    matches = [match for match in matches if match != "۱۰۰,۰۰۰,۰۰۰" and not match.startswith("۰")]
 
-    
     # Compose the message
-    message = f"📌💥Found {len(matches)} relevant ronix_drill Price💥📌.\n{'\n'.join(matches)}"
-
+    if matches:
+        message = f"📌💥Found {len(matches)} relevant Ronix drill prices💥📌:\n" + "\n".join(matches)
+    else:
+        message = "No valid prices found."
 
     # Send the message to Telegram
     await send_to_telegram(message)
