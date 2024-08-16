@@ -65,7 +65,7 @@ async def main():
     webpage_content = await fetch_webpage_content(url)
 
     # Define the desired pattern
-    pattern = r"\d{3},\d{3},\d{3}"
+    pattern = r"\d{1},\d{3},\d{3}"
 
     # Find all matches in the webpage content
     matches = re.findall(pattern, webpage_content)
@@ -77,8 +77,8 @@ async def main():
     modified_matches = []
     for match in matches:
         first_digit = int(match[0])
-        if first_digit > 1:
-            match = match[1:]
+        if first_digit > 9:
+            match = match[9:]
         modified_matches.append(match)
 
     # Compose the message
