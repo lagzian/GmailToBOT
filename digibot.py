@@ -70,14 +70,20 @@ async def main():
     # Find all matches in the webpage content
     matches = re.findall(pattern, webpage_content)
 
+    # Debugging: Print all matches before filtering
+    print("All matches found:", matches)
+
     # Remove matches equal to "۱۰۰,۰۰۰,۰۰۰" and filter out any matches starting with "0"
-    matches = [match for match in matches if match != "۱۰۰,۰۰۰,۰۰۰" and not match.startswith("۰")]
+    matches = [match for match in matches if match != "۱۰۰,۰۰۰,۰۰۰"]
 
     # Compose the message
     if matches:
         message = f"📌💥Found {len(matches)} relevant Ronix drill prices💥📌:\n" + "\n".join(matches)
     else:
         message = "No valid prices found."
+
+    # Debugging: Print the final message before sending to Telegram
+    print("Message to send:", message)
 
     # Send the message to Telegram
     await send_to_telegram(message)
