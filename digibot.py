@@ -70,8 +70,8 @@ async def main():
     # Find all matches in the webpage content
     matches = re.findall(pattern, webpage_content)
 
-    # Remove matches equal to "۱۰۰,۰۰۰,۰۰۰"
-    matches = [match for match in matches if match != "۱۰۰,۰۰۰,۰۰۰"]
+    # Remove matches equal to "۰۰۰,۰۰۰,۰۰۰"
+    matches = [match for match in matches if match != "۰۰۰,۰۰۰,۰۰۰"]
 
     # Modify matches: Remove the first digit if it's greater than 1
     modified_matches = []
